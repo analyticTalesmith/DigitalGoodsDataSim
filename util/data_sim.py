@@ -41,7 +41,8 @@ def generate_sales_data(productList, priceList, weightList,  maxPurchaseSize = 1
     curDate = startDate
     for i in range(daysDiff):
         #Simulate number of customers for that day
-        numCustomers = round(max(0,np.random.normal(i*.25+20, 15)))
+        #numCustomers = round(max(0,np.random.normal(i*.25+20, 15)))
+        numCustomers = round(max(0,np.random.normal(.019*(i**1.3), 10)+random.randint(-20,10)))
 
         if numCustomers > 0:
             #Then loop through each customer
