@@ -3,7 +3,7 @@ from datetime import date
 from datetime import timedelta
 import numpy as np
 import random
-from . import real_city
+from util import real_city_provider as real_city
 
 def generate_customer():
     gender = random.choices(["Man", "Woman", "Non-binary", "Other/Prefer Not to Say"], weights = [.4818, .511 ,.0036, .0036], k = 1)[0]
@@ -11,7 +11,7 @@ def generate_customer():
     town = real_city.get_real_city()
     return([gender, age, town])
 
-def generate_sales_data(productList, weightList, maxPurchaseSize = 10, dataYears = 1):
+def generate_sales_data(productList, priceList, weightList,  maxPurchaseSize = 10, dataYears = 1):
     customerData = []
     orderData = []
     salesData = []
@@ -49,7 +49,7 @@ def generate_sales_data(productList, weightList, maxPurchaseSize = 10, dataYears
             #for each customer, generate demographic data and add it to the customerDate list
             customerInfo = generate_customer()
             customerData.append([customerID, customerInfo[0], customerInfo[1], customerInfo[2]])
-            customerID += 1
+            
 
             #clear helper list for new items
             basket = []
@@ -67,16 +67,20 @@ def generate_sales_data(productList, weightList, maxPurchaseSize = 10, dataYears
             
             print(f"Customer {customerID}")
             #Loop through items and add them to the purchase table
+            totalRevenue = 0
             for item in basket:
-                print(f"\t{item}")
+                print(f"\t{item} ({priceList[item]})")
+                salesData.append([orderID, item])
+                totalRevenue += float(priceList[item])
 
+            orderData.append([orderID, customerID, additionalItemsNum, totalRevenue])
+            customerID += 1
             orderID += 1
-
-
         curDate + timedelta(days = i)
-        '''
-
-
+        
+    print(salesData)
+    print(orderData)
+'''
 for i in range(NUM_PURCHASES):
     basket = []
 
