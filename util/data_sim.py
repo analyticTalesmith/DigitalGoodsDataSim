@@ -45,6 +45,8 @@ def generate_customer():
     return([gender, age, town])
 
 def generate_sales_data(productDF, weightList,  maxPurchaseSize = 10, dataYears = 1):
+    
+
     productList = productDF["Product Name"].tolist()
     priceList = productDF["Price"].tolist()
 
@@ -90,10 +92,12 @@ def generate_sales_data(productDF, weightList,  maxPurchaseSize = 10, dataYears 
 
     #Simulate each day
     curDate = startDate
+    dailyTrend = .5
+    dailyReturnTrend = .5
     for i in range(daysDiff):
         #Simulate number of customers for that day
         #numCustomers = round(max(0,np.random.normal(i*.25+20, 15)))
-        numCustomers = round(max(0,np.random.normal(.019*(i**1.3), 10)+random.randint(-20,10)))
+        numCustomers = round(max(0,np.random.normal((.019*(i**1.3))*dailyTrend, 10)+random.randint(-20,10)/2))
 
         if numCustomers > 0:
             #Then loop through each customer
@@ -128,7 +132,7 @@ def generate_sales_data(productDF, weightList,  maxPurchaseSize = 10, dataYears 
             
 
         #Generate some data from return customers
-        numReturnCustomers = round(max(0,np.random.normal(i*.014-5, 5)))
+        numReturnCustomers = round(max(0,np.random.normal((i*.014-5)*dailyReturnTrend, 5)/2))
         if numReturnCustomers > 0 and len(customerData) > numReturnCustomers:
             for i in range(numReturnCustomers):
 
@@ -158,5 +162,7 @@ def generate_sales_data(productDF, weightList,  maxPurchaseSize = 10, dataYears 
                 orderID += 1
 
         curDate = curDate + timedelta(days = 1)
+        dailyTrend = min(1, max(0.05, dailyTrend + np.random.normal(0, .2)))
+        dailyReturnTrend = min(2, max(0.05, dailyReturnTrend + np.random.normal(0, .2)))
         
     return([customerData, orderData, salesData])
