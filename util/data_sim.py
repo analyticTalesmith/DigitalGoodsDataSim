@@ -4,31 +4,82 @@ from datetime import timedelta
 import numpy as np
 import random
 from util import real_city_provider as real_city
+from math import ceil, floor
+
+def makeWeightsForChoice(inListLen, topPerc = .2, midPerc =.5, topBoost = .5, midBoost = .5):
+    
+    if inListLen < 1:
+        raise Exception("List length must be int > 0. Length: " + str(inListLen))
+    elif inListLen == 1:
+        return [1]
+    elif inListLen == 2:
+        return [1, 2]
+    elif inListLen >= 3 :
+        countTopPerf = max(1, round(topPerc*inListLen))
+        countMidPerf = min(1, floor(midPerc*inListLen))
+        countBotPerf = max(1, inListLen-(countTopPerf + countMidPerf))
+
+        weights = [1]*countBotPerf
+        midWeight = ceil((1+midBoost)*countBotPerf)
+        topWeight = ceil((1+topBoost+midBoost)*(countBotPerf+countMidPerf))
+
+        for _ in range(countMidPerf):
+            weights.append(midWeight)
+        for _ in range(countTopPerf):
+            weights.append(topWeight)
+        random.shuffle(weights)
+        return weights
+    else:
+        raise Exception("Unknown error in makeWeightsForChoice")
+
+def getTotalWeight(inList):
+    runningSum = 0
+    for weight in inList:
+        runningSum += weight
+    return runningSum
 
 def generate_customer():
     gender = random.choices(["Man", "Woman", "Non-binary", "Other/Prefer Not to Say"], weights = [.4818, .511 ,.0036, .0036], k = 1)[0]
-    age = max(18, round(np.random.normal(38, 13)))
+    age = max(18, round(np.random.normal(28, 13)+18))
     town = real_city.get_real_city()
     return([gender, age, town])
 
-def generate_sales_data(productList, priceList, weightList,  maxPurchaseSize = 10, dataYears = 1):
+def generate_sales_data(productDF, weightList,  maxPurchaseSize = 10, dataYears = 1):
+    productList = productDF["Product Name"].tolist()
+    priceList = productDF["Price"].tolist()
+
+    uniqueCats = productDF["Product Program"].unique()
+    categoryCount = len(uniqueCats)
+    categoryWeights = makeWeightsForChoice(categoryCount)
+
+
+    catWeightDict = {}
+    i = 0
+    for category in uniqueCats:
+        catWeightDict[category] = categoryWeights[i]
+        i += 1
+
+    initialItemWeights = makeWeightsForChoice(len(productList))
+
+    itemsWeightTotal = getTotalWeight(initialItemWeights)
+    categoryWeightTotal = getTotalWeight(categoryWeights)
+    
+    productBias = []
+    for i in range(len(productList)):
+
+        itemWeight = initialItemWeights[i]/itemsWeightTotal
+        catWeight = catWeightDict[productDF["Product Program"][i]]/categoryWeightTotal
+
+        productBias.append(1 + itemWeight + catWeight)
+        
+
     customerData = []
     orderData = []
     salesData = []
     
     customerID = 1000
     orderID = 1000
-
-    productBias = [] #Biases the first product that is purchased
-    biasChoices = []
-
-    for i in range(1, 51):
-        for j in range(round((51-i)/2)):
-            biasChoices.append(i)
-
-    for i in range(len(productList)):
-        productBias.append(random.choice(biasChoices))
-
+    
     today = date.today()
     daysDiff = 365*dataYears
     startDate = today - timedelta(days = daysDiff)
